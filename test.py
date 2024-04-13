@@ -3,6 +3,8 @@ import regex as re
 import random
 import string
 import collections
+import bisect  
+from sortedcontainers import SortedList
 def create_suffix_tree(text):
     #Create a suffix tree
     sTree = st.Tree({"inputText":text}, builder=st.ukkonen.Builder)
@@ -16,7 +18,10 @@ def traverse_tree(root,text,sTree):
             print("\nNode label: " + text[node.start:node.end], end = "\t")
             #check if it has any leaf children
             if any(not hasattr(child,'children') for child_label,child in node.children.items()):
-                indices_list = [i[1].start for i in sTree.find_all(text[node.start:node.end])]
+                #indices_list = [i[1].start for i in sTree.find_all(text[node.start:node.end])]
+                indices_list = SortedList()
+                for i in sTree.find_all(text[node.start:node.end]):
+                    indices_list.add(i[1].start)
                 print(indices_list)
                 repeating_substrings[text[node.start:node.end]] = (indices_list,text[node.start:node.end],node)
                 print("Repeating substring")
@@ -57,22 +62,30 @@ def suffix_link_tester():
     l = 10000
     hit = 0
     miss = 0
-    for i in range(10000):
+    for i in range(100):
         s,o,n,r = generate_overlapping_strings()
         print("BEING PROCESSED: ", s)
         sTree = create_suffix_tree(s)
         d = traverse_tree(sTree.root,s,sTree)
+        print("d: ", d)
         #print(d)
         #if contains_only_repetitions(s, o + n):
         #    print("SPECIAL CASE: ", s)
         #    continue
         
         try:
-            print("> Overlapping subtring " + o + (n + o)*(r) + " has suffix link?: ", d[o + (n + o)*(r)][2].suffix_link, (o,n,s,r))
-            hit += 1
+            for i in d:
+                print("Substring " + i + " has overlap?: ",check_if_overlap(d[i][0],len(i)))
+                if check_if_overlap(d[i][0],len(i)):
+                    if d[i][2].suffix_link:
+                        print("yes it does")
+                    else: print("nope")
+                
+            
             #print("> Occurences of d[o+n+o]: ",len([i.start for i[1] in sTree.findall(o + n + o)]))
         except KeyError:
-            print("> Failed! no suffix link for ", (o,n,s,r), ". That is, no ", o + (n + o)*(r), " in ", s, " ", d.keys())
+            print("Failed! ")
+            #print("> Failed! no suffix link for ", (o,n,s,r), ". That is, no ", o + (n + o)*(r), " in ", s, " ", d.keys())
         except Exception as e:
             print(e)
     print("Processed no of strings for suffix links: ", l)
@@ -89,26 +102,60 @@ def concept_tester():
         print(key)
         print(sTree.find_all(value[1]))
     '''
-def check_if_overlap():
-    input_string = input("Enter String:")
-    substring = input("Enter Substring:")
-    sTree = create_suffix_tree(input_string)
-    indices_list = sTree.find_all(substring)
-    print(indices_list)
-    for i in range(len(indices_list)-1):
-        first_start = indices_list[i][1].start
-        second_substring_start = indices_list[i + 1][1].start
-        print(f"First start: {first_start}, second substring start: {second_substring_start}")
-        print(indices_list[i][1].start,indices_list[i + 1][1].start)
-        if first_start + len(substring) - 1 >= second_substring_start:
-            return True
-    return False
+def check_theorem(s):
+    print("BEING PROCESSED: ", s)
+    sTree = create_suffix_tree(s)
+    d = traverse_tree(sTree.root,s,sTree)
+    print("d: ", d)
+        #print(d)
+        #if contains_only_repetitions(s, o + n):
+        #    print("SPECIAL CASE: ", s)
+        #    continue
+        
+    try:
+        for i in d:
+            print("Substring " + i + " has overlap?: ",check_if_overlap(d[i][0],len(i)))
+            if check_if_overlap(d[i][0],len(i)):
+                if d[i][2].suffix_link:
+                    print("yes it does")
+                else: print("nope")
+            
+        
+        #print("> Occurences of d[o+n+o]: ",len([i.start for i[1] in sTree.findall(o + n + o)]))
+    except KeyError:
+        print("Failed! ")
+        #print("> Failed! no suffix link for ", (o,n,s,r), ". That is, no ", o + (n + o)*(r), " in ", s, " ", d.keys())
+    except Exception as e:
+        print(e)
+    #print("Processed no of strings for suffix links: ", l)
+    #print(hit)
+    #print("> suffix link Success rate is: ", 100*(hit)/l)
+def concept_tester():
+    text = input("Enter text: ")
+    sTree = create_suffix_tree(text)
+    print(sTree)
+    d = traverse_tree(sTree.root,text,sTree)
+    print(d.items())
+
+def check_if_overlap(indices_list, substring_length):
+    #if any value has a difference lesser than substring_length compared to next value
+    return any(abs(indices_list[i] - indices_list[i+1]) < substring_length for i in range(len(indices_list)-1))
+    
+    
+def test(input_text):
+    #sTree = create_suffix_tree(input_text)
+    #d = traverse_tree(sTree.root,input_text,sTree)
+    check_theorem(input_text)
+    #for i in d:
+        #print("The substring " + i + " has overlap?: ",check_if_overlap(d[i][0],len(i)), d[i][0], len(i))
+    #print(d)
 
 def overlap_remove(s):
     raise NotImplementedError
 
 
 
-suffix_link_tester()
+#suffix_link_tester()
 #concept_tester()
 #print(check_if_overlap())
+test("aaaaaaaaaaaaa")
